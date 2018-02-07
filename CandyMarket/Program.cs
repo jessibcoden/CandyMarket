@@ -6,15 +6,23 @@ namespace CandyMarket
 {
 	class Program
 	{
-		static void Main(string[] args)
+        static User _currentUser;
+        static List<User>  _allUsers;
+
+        static void Main(string[] args)
 		{
 			// wanna be a l33t h@x0r? skip all this console menu nonsense and go with straight command line arguments. something like `candy-market add taffy "blueberry cheesecake" yesterday`
 			var db = SetupNewApp();
+            _allUsers = db.GetAllUsers();
 
-			var run = true;
+            _currentUser = CurrentUserMenu(db);
+
+            var run = true;
 			while (run)
 			{
                 ConsoleKeyInfo userInput = MainMenu(db);
+                CandyType candyType;
+
 
                 switch (userInput.KeyChar)
 				{
@@ -26,13 +34,15 @@ namespace CandyMarket
 						// select a candy type, returns SelectedCandyType:
 						var selectedCandyType = AddNewCandyType(db);
 
-						/** MORE DIFFICULT DATA MODEL
+                        /** MORE DIFFICULT DATA MODEL
 						 * show a new menu to enter candy details
 						 * it would be convenient to show the menu in stages e.g. press enter to go to next detail stage, but write the whole screen again with responses populated so far.
 						 */
 
-						// if(moreDifficultDataModel) bug - this is passing candy type right now (which just increments in our DatabaseContext), but should also be passing candy details
-						db.SaveNewCandy(selectedCandyType.KeyChar);
+                        // if(moreDifficultDataModel) bug - this is passing candy type right now (which just increments in our DatabaseContext), but should also be passing candy details
+
+                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        _currentUser.AddCandy(candyType, 1);
 						break;
 					case '2':
                         /** eat candy
@@ -42,8 +52,9 @@ namespace CandyMarket
 						 * 
 						 * enjoy candy
 						 */
+                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
                         selectedCandyType = EatCandy(db);
-                        db.RemoveCandy(selectedCandyType.KeyChar);
+                        db.RemoveCandy(_currentUser.Name, candyType);
                         break;
 					case '3':
                         /** throw away candy
@@ -54,8 +65,9 @@ namespace CandyMarket
 						 * 
 						 * cry for lost candy
 						 */
+                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
                         selectedCandyType = TossCandy(db);
-                        db.RemoveCandy(selectedCandyType.KeyChar);
+                        db.RemoveCandy(_currentUser.Name, candyType);
                         break;
 					case '4':
 						/** give candy
@@ -93,35 +105,45 @@ namespace CandyMarket
 			return db;
 		}
 
-        static ConsoleKeyInfo CurrentUserMenu(DatabaseContext db)
+        static User CurrentUserMenu(DatabaseContext db)
         {
             var allUsers = db.GetAllUsers();
-
+            var userNames = allUsers.Select(user => user.Name).ToList(); //ToList to convert IEnum string to a list of strings
             var userMenu = new View()
                     .AddMenuText("Who are you?")
-                    .AddMenuOptions(allUsers);
+                    .AddMenuOptions(userNames);
 
             Console.Write(userMenu.GetFullMenu());
 
             ConsoleKeyInfo currentUser = Console.ReadKey();
-            return currentUser;
+
+            var userIndex = int.Parse(currentUser.KeyChar.ToString()); // converts key to userIndex as a string
+
+            
+            return allUsers[userIndex -1];
         }
 
         static ConsoleKeyInfo MainMenu(DatabaseContext db)
-		{
-
+        {
+            db.CalculateAllUsersCandy();
+            
             View mainMenu = new View()
-                    .AddMenuText("You currently have...")
-                    .AddMenuText(db.ShowTaffyCount())
-                    .AddMenuText(db.ShowCandyCoatedCount())
-                    .AddMenuText(db.ShowChocolateBarCount())
-                    .AddMenuText(db.ShowZagnutCount())
-                    .AddMenuOption("Did you just get some new candy? Add it here.")
+                    .AddMenuText("Your Candy Collection..");
+                    foreach (var item in db.CandyTypeCounts)
+                    {
+                        var userName = item.Key.ToString();
+                        if (userName == _currentUser.Name)
+                        {
+                            mainMenu.AddMenuText($"{item.Value.CandyType}: {item.Value.TypeCount}");
+
+                        }
+                    }
+            mainMenu.AddMenuOption("Did you just get some new candy? Add it here.")
 					.AddMenuOption("Do you want to eat some candy? Take it here.")
                     .AddMenuOption("Do you want to throw away some candy? Toss it here.")
                     .AddMenuText("Press 0 to exit.");
 
-			Console.Write(mainMenu.GetFullMenu());
+            Console.Write(mainMenu.GetFullMenu());
 			ConsoleKeyInfo userOption = Console.ReadKey();
 			return userOption;
 		}
