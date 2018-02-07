@@ -4,7 +4,7 @@
 	{
 		TaffyNotLaffy = 1,
 		CandyCoated,
-		CompressedSugar,
+		ChocolateBar,
 		ZagnutStyle
 	}
 }

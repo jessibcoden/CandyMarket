@@ -7,10 +7,12 @@ namespace CandyMarket
 {
     internal class DatabaseContext
     {
-        private int _countOfTaffy;
-        private int _countOfCandyCoated;
-        private int _countOfChocolateBar;
-        private int _countOfZagnut;
+        Dictionary<string, int> _taffy = new Dictionary<string, int>();
+        Dictionary<string, int> _candyCoated = new Dictionary<string, int>();
+        Dictionary<string, int> _chocolateBar = new Dictionary<string, int>();
+        Dictionary<string, int> _zagnut = new Dictionary<string, int>();
+
+        public Dictionary<string, CandyCount> CandyTypeCounts { get; set; } = new Dictionary<string, CandyCount>();
 
         /**
 		 * this is just an example.
@@ -18,15 +20,34 @@ namespace CandyMarket
 		 * Dictionary<CandyType, List<Candy>> BagOfCandy { get; set; }
 		 */
 
-        public DatabaseContext(int tone) => Console.Beep(tone, 2500);
-
-        internal List<string> GetAllUsers()
+        public DatabaseContext(int tone)
         {
-            return Enum
-                .GetNames(typeof(User))
-                .Select(allUsers =>
-                    allUsers.Humanize(LetterCasing.Title))
-                .ToList();
+            Console.Beep(tone, 2500);
+            //CandyTypeCounts.Add(CandyType.TaffyNotLaffy, 0);
+        }
+
+        public List<User> AllUsers { get; set; } = new List<User>();
+
+        internal List<User> GetAllUsers()
+        {
+            var Jess = new User("Jess", this); //using "this" because we're currently in DatabaseContext so "this" refers to this instance
+            var Sam = new User("Sam", this);
+            var Kit = new User("Kit", this);
+
+            if (!AllUsers.Any(thing => thing.Name == "Jess"))
+            {
+                AllUsers.Add(Jess);
+            }
+            if (!AllUsers.Any(thing => thing.Name == "Sam"))
+            {
+                AllUsers.Add(Sam); 
+            }
+            if (!AllUsers.Any(thing => thing.Name == "Kit"))
+            {
+                AllUsers.Add(Kit); 
+            }
+
+            return AllUsers;
         }
 
         internal List<string> GetCandyTypes()
@@ -38,77 +59,109 @@ namespace CandyMarket
 				.ToList();
 		}
 
-        internal string ShowTaffyCount()
+        internal void CalculateAllUsersCandy()
         {
-            return $"Taffy:{_countOfTaffy}";
+            foreach (var user in AllUsers)
+            {
+                var thisUser = user.Name;
+                if (!_taffy.ContainsKey(thisUser))
+                {
+                    _taffy.Add(thisUser, 0);
+                    _candyCoated.Add(thisUser, 0);
+                    _chocolateBar.Add(thisUser, 0);
+                    _zagnut.Add(thisUser, 0);
+                }
+                foreach (var taffy in _taffy)
+                {
+                    if (taffy.Key == thisUser)
+                    {
+                        CandyTypeCounts[$"{thisUser}Taffy"] = new CandyCount {  CandyOwner = thisUser, CandyType = "Taffy", TypeCount = taffy.Value };
+                    }
+                }
+                foreach (var candy in _candyCoated)
+                {
+                    if (candy.Key == thisUser)
+                    {
+                        CandyTypeCounts[$"{thisUser}CandyCoated"] = new CandyCount { CandyType = "Candy Coated", TypeCount = candy.Value };
+                    }
+                }
+                foreach (var bar in _chocolateBar)
+                {
+                    if (bar.Key == thisUser)
+                    {
+                        CandyTypeCounts[$"{thisUser}ChocolateBar"] = new CandyCount { CandyType = "Chocolate Bar", TypeCount = bar.Value };
+                    }
+                }
+                foreach (var zag in _zagnut)
+                {
+                    if (zag.Key == thisUser)
+                    {
+                        CandyTypeCounts[$"{thisUser}Zagnut"] = new CandyCount { CandyType = "Zagnut", TypeCount = zag.Value };
+                    }
+                }
+            }
+
         }
 
-        internal string ShowCandyCoatedCount()
+        internal void SaveNewCandy(string userName, CandyType candyType, int howMany)
         {
-            return $"Candy Coated:{_countOfCandyCoated}";
-        }
-
-        internal string ShowChocolateBarCount()
-        {
-            return $"Chocolate Bar(s):{_countOfChocolateBar}";
-        }
-
-        internal string ShowZagnutCount()
-        {
-            return $"Zagnut(s):{_countOfZagnut}";
-        }
-
-        internal void SaveNewCandy(char selectedCandyMenuOption)
-        {
-            var candyOption = int.Parse(selectedCandyMenuOption.ToString());
-
-            var maybeCandyMaybeNot = (CandyType)selectedCandyMenuOption;
-            var forRealTheCandyThisTime = (CandyType)candyOption;
-
-            switch (forRealTheCandyThisTime)
+            switch (candyType)
             {
                 case CandyType.TaffyNotLaffy:
-                    ++_countOfTaffy;
+                    _taffy[userName] += howMany;
                     break;
                 case CandyType.CandyCoated:
-                    ++_countOfCandyCoated;
+                    _candyCoated[userName] += howMany;
                     break;
-                case CandyType.CompressedSugar:
-                    ++_countOfChocolateBar;
+                case CandyType.ChocolateBar:
+                    _chocolateBar[userName] += howMany;
                     break;
                 case CandyType.ZagnutStyle:
-                    ++_countOfZagnut;
+                    _zagnut[userName] += howMany;
                     break;
                 default:
                     break;
             }
         }
 
-            internal void RemoveCandy(char selectedCandyMenuOption)
+        internal void RemoveCandy(string name, CandyType type)
+        {
+            switch (type)
             {
-                var candyOption = int.Parse(selectedCandyMenuOption.ToString());
-
-                var maybeCandyMaybeNot = (CandyType)selectedCandyMenuOption;
-                var forRealTheCandyThisTime = (CandyType)candyOption;
-
-                switch (forRealTheCandyThisTime)
-                {
-                    case CandyType.TaffyNotLaffy:
-                        --_countOfTaffy;
-                        break;
-                    case CandyType.CandyCoated:
-                        --_countOfCandyCoated;
-                        break;
-                    case CandyType.CompressedSugar:
-                        --_countOfChocolateBar;
-                        break;
-                    case CandyType.ZagnutStyle:
-                        --_countOfZagnut;
-                        break;
-                    default:
-                        break;
-                }
+                case CandyType.TaffyNotLaffy:
+                    if (_taffy[name] > 0)
+                    {
+                        _taffy[name]--;  
+                    }
+                    break;
+                case CandyType.CandyCoated:
+                    if (_candyCoated[name] > 0)
+                    {
+                        _candyCoated[name]--; 
+                    }
+                    break;
+                case CandyType.ChocolateBar:
+                    if (_chocolateBar[name] > 0)
+                    {
+                        _chocolateBar[name]--; 
+                    }
+                    break;
+                case CandyType.ZagnutStyle:
+                    if (_zagnut[name] > 0)
+                    {
+                        _zagnut[name]--; 
+                    }
+                    break;
+                default:
+                    break;
             }
+        }
+
+        internal void CountUserInventory()
+        {
+            
+        }
+            
 	}
 
 
