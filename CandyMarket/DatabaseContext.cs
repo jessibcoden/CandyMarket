@@ -14,6 +14,8 @@ namespace CandyMarket
 
         public Dictionary<string, CandyCount> CandyTypeCounts { get; set; } = new Dictionary<string, CandyCount>();
 
+
+
         /**
 		 * this is just an example.
 		 * feel free to modify the definition of this collection "BagOfCandy" if you choose to implement the more difficult data model.
@@ -61,45 +63,49 @@ namespace CandyMarket
 
         internal void CalculateAllUsersCandy()
         {
+
             foreach (var user in AllUsers)
             {
-                var thisUser = user.Name;
-                if (!_taffy.ContainsKey(thisUser))
+                if (!_taffy.ContainsKey(user.Name))
                 {
-                    _taffy.Add(thisUser, 0);
-                    _candyCoated.Add(thisUser, 0);
-                    _chocolateBar.Add(thisUser, 0);
-                    _zagnut.Add(thisUser, 0);
+                    _taffy.Add(user.Name, 0);
+                    _candyCoated.Add(user.Name, 0);
+                    _chocolateBar.Add(user.Name, 0);
+                    _zagnut.Add(user.Name, 0);
                 }
+
                 foreach (var taffy in _taffy)
                 {
-                    if (taffy.Key == thisUser)
+                    if (taffy.Key == user.Name)
                     {
-                        CandyTypeCounts[$"{thisUser}Taffy"] = new CandyCount {  CandyOwner = thisUser, CandyType = "Taffy", TypeCount = taffy.Value };
+                        CandyTypeCounts[$"{user.Name}Taffy"] = new CandyCount { CandyOwner = user.Name, CandyType = "Taffy", TypeCount = taffy.Value };
                     }
                 }
                 foreach (var candy in _candyCoated)
                 {
-                    if (candy.Key == thisUser)
+                    if (candy.Key == user.Name)
                     {
-                        CandyTypeCounts[$"{thisUser}CandyCoated"] = new CandyCount { CandyType = "Candy Coated", TypeCount = candy.Value };
+                        CandyTypeCounts[$"{user.Name}CandyCoated"] = new CandyCount { CandyOwner = user.Name, CandyType = "Candy Coated", TypeCount = candy.Value };
                     }
                 }
                 foreach (var bar in _chocolateBar)
                 {
-                    if (bar.Key == thisUser)
+                    if (bar.Key == user.Name)
                     {
-                        CandyTypeCounts[$"{thisUser}ChocolateBar"] = new CandyCount { CandyType = "Chocolate Bar", TypeCount = bar.Value };
+                        CandyTypeCounts[$"{user.Name}ChocolateBar"] = new CandyCount { CandyOwner = user.Name, CandyType = "Chocolate Bar", TypeCount = bar.Value };
                     }
                 }
                 foreach (var zag in _zagnut)
                 {
-                    if (zag.Key == thisUser)
+                    if (zag.Key == user.Name)
                     {
-                        CandyTypeCounts[$"{thisUser}Zagnut"] = new CandyCount { CandyType = "Zagnut", TypeCount = zag.Value };
+                        CandyTypeCounts[$"{user.Name}Zagnut"] = new CandyCount { CandyOwner = user.Name, CandyType = "Zagnut", TypeCount = zag.Value };
                     }
                 }
+
             }
+
+            
 
         }
 
@@ -157,10 +163,7 @@ namespace CandyMarket
             }
         }
 
-        internal void CountUserInventory()
-        {
-            
-        }
+
             
 	}
 
