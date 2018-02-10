@@ -7,7 +7,10 @@ namespace CandyMarket
 	class Program
 	{
         static User _currentUser;
+        static User _selectedFriend;
+        static CandyType _selectedCandyType;
         static List<User>  _allUsers;
+        static CandyType _desiredCandyType;
 
         static void Main(string[] args)
 		{
@@ -21,8 +24,6 @@ namespace CandyMarket
 			while (run)
 			{
                 ConsoleKeyInfo userInput = MainMenu(db);
-                CandyType candyType;
-
 
                 switch (userInput.KeyChar)
 				{
@@ -41,8 +42,8 @@ namespace CandyMarket
 
                         // if(moreDifficultDataModel) bug - this is passing candy type right now (which just increments in our DatabaseContext), but should also be passing candy details
 
-                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
-                        _currentUser.AddCandy(candyType, 1);
+                        _selectedCandyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        _currentUser.AddCandy(_selectedCandyType, 1);
 						break;
 					case '2':
                         /** eat candy
@@ -52,9 +53,9 @@ namespace CandyMarket
 						 * 
 						 * enjoy candy
 						 */
-                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        _selectedCandyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
                         selectedCandyType = EatCandy(db);
-                        db.RemoveCandy(_currentUser.Name, candyType);
+                        db.RemoveCandy(_currentUser.Name, _selectedCandyType);
                         break;
 					case '3':
                         /** throw away candy
@@ -65,12 +66,12 @@ namespace CandyMarket
 						 * 
 						 * cry for lost candy
 						 */
-                        candyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        _selectedCandyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
                         selectedCandyType = TossCandy(db);
-                        db.RemoveCandy(_currentUser.Name, candyType);
+                        db.RemoveCandy(_currentUser.Name, _selectedCandyType);
                         break;
 					case '4':
-						/** give candy
+                        /** give candy
 						 * feel free to hardcode your users. no need to create a whole UI to register users.
 						 * no one is impressed by user registration unless it's just amazingly fast & simple
 						 * 
@@ -79,12 +80,21 @@ namespace CandyMarket
 						 * you'll need a way to select what user you're giving candy to.
 						 * one design suggestion would be to put candy "on the table" and then "give the candy on the table" to another user once you've selected all the candy to give away
 						 */
-						break;
+                        _selectedCandyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        selectedCandyType = GiveCandy(db);
+                        _selectedFriend = PickAFriend(db);
+                        db.RemoveCandy(_currentUser.Name, _selectedCandyType);
+                        _selectedFriend.AddCandy(_selectedCandyType, 1);
+
+                        break;
 					case '5':
-						/** trade candy
+                        /** trade candy
 						 * this is the next logical step. who wants to just give away candy forever?
 						 */
-						break;
+                        _selectedCandyType = (CandyType)int.Parse(selectedCandyType.KeyChar.ToString());
+                        selectedCandyType = GiveCandy(db);
+                        _desiredCandyType = (CandyType)DesireCandy(db);
+                        break;
 					default: // what about requesting candy? like a wishlist. that would be cool.
 						break;
 				}
@@ -132,15 +142,16 @@ namespace CandyMarket
                     foreach (var item in db.CandyTypeCounts)
                     {
                         var userName = item.Key.ToString();
-                        if (userName == _currentUser.Name)
+                        if (item.Value.CandyOwner == _currentUser.Name)
                         {
                             mainMenu.AddMenuText($"{item.Value.CandyType}: {item.Value.TypeCount}");
-
                         }
                     }
-            mainMenu.AddMenuOption("Did you just get some new candy? Add it here.")
+                    mainMenu.AddMenuOption("Did you just get some new candy? Add it here.")
 					.AddMenuOption("Do you want to eat some candy? Take it here.")
                     .AddMenuOption("Do you want to throw away some candy? Toss it here.")
+                    .AddMenuOption("Feeling generous? Give it here.")
+                    .AddMenuOption("Wanna swap? Trade it here.")
                     .AddMenuText("Press 0 to exit.");
 
             Console.Write(mainMenu.GetFullMenu());
@@ -195,13 +206,48 @@ namespace CandyMarket
             var candyTypes = db.GetCandyTypes();
 
             var newCandyMenu = new View()
-                    .AddMenuText("What type of candy do you want to toss?")
+                    .AddMenuText("What type of candy do you want to give?")
                     .AddMenuOptions(candyTypes);
 
             Console.Write(newCandyMenu.GetFullMenu());
 
             ConsoleKeyInfo selectedCandyType = Console.ReadKey();
             return selectedCandyType;
+        }
+
+        static User PickAFriend(DatabaseContext db)
+        {
+            //db.GetAllUsers.Where
+            var AllFriends = new List<User>();
+            View mainMenu = new View()
+            .AddMenuText("Pick a friend.");
+            //Use AllFriends.Map to refactor foreach
+            foreach (var user in db.AllUsers)
+            {
+                if (user != _currentUser)
+                {
+                    AllFriends.Add(user);
+                    mainMenu.AddMenuOption($"{user.Name}");
+                }
+            }
+
+            Console.Write(mainMenu.GetFullMenu());
+            int selectedFriend = int.Parse(Console.ReadKey().KeyChar.ToString());
+            var friendName = AllFriends[selectedFriend - 1];
+            return db.GetAllUsers().First<User>(user => user == friendName);
+        }
+
+        static int DesireCandy(DatabaseContext db)
+        {
+            var candyTypes = db.GetCandyTypes();
+
+            var newCandyMenu = new View()
+                    .AddMenuText("What type of candy do you want do you want?")
+                    .AddMenuOptions(candyTypes);
+
+            Console.Write(newCandyMenu.GetFullMenu());
+            int desiredCandyType = int.Parse(Console.ReadKey().KeyChar.ToString());
+            return desiredCandyType;
         }
     }
 }
